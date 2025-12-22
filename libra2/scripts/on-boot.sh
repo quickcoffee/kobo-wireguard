@@ -2,7 +2,7 @@
 
 # Make sure to load the TUN kernel module and create the /dev/net/tun device
 if ! lsmod | grep -q "^tun"; then
-  insmod /lib/modules/tailscale/kernel/drivers/net/tun.ko
+  insmod /lib/modules/wireguard/kernel/drivers/net/tun.ko
   if [ ! -c /dev/net/tun ]; then
     mkdir -p /dev/net
     mknod /dev/net/tun c 10 200
@@ -18,9 +18,11 @@ if [[ $? -eq 143 ]]; then
     exit 1
 fi
 
-case "$(pidof tailscaled | wc -w)" in
-0) tailscaled --statedir=/mnt/onboard/tailscale &> /tailscaled.log &
-   ;;
-esac
+# Check if WireGuard configuration exists and bring up the interface
+if [ -f /mnt/onboard/wireguard/config/wg0.conf ]; then
+  if ! ip link show wg0 &>/dev/null; then
+    WG_QUICK_USERSPACE_IMPLEMENTATION=boringtun wg-quick up /mnt/onboard/wireguard/config/wg0.conf &> /wg-quick.log
+  fi
+fi
 
 exit 0

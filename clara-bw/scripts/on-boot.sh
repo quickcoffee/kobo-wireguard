@@ -15,9 +15,11 @@ if [[ $? -eq 143 ]]; then
     exit 1
 fi
 
-case "$(pidof tailscaled | wc -w)" in
-0) tailscaled --statedir=/mnt/onboard/tailscale &> /tailscaled.log &
-   ;;
-esac
+# Check if WireGuard configuration exists and bring up the interface
+if [ -f /mnt/onboard/wireguard/config/wg0.conf ]; then
+  if ! ip link show wg0 &>/dev/null; then
+    wg-quick up /mnt/onboard/wireguard/config/wg0.conf &> /wg-quick.log
+  fi
+fi
 
 exit 0
