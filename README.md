@@ -59,11 +59,12 @@ Default tool refs:
 Run `uninstall-wireguard.sh` from your device directory.
 
 ## Improvements from upstream issue reports
-- Removed Tailscale/iptables runtime dependency in startup scripts.
+- Removed legacy VPN/iptables runtime dependency in startup scripts.
 - Fixed rule cleanup mismatch by consistently using `98-wireguard.rules`.
 - Added `/dev/pts` mount guard in boot path for more stable shell/SSH behavior.
 - Added explicit route/address files to reduce accidental full-tunnel breakage of Kobo connectivity.
 
 ## Acknowledgements
+- Based on [videah/kobo-tailscale](https://github.com/videah/kobo-tailscale).
 - [Dylan Staley for early Kobo networking scripts](https://dstaley.com/posts/tailscale-on-kobo-sage)
 - [jmacindoe for Kobo kernel module documentation](https://github.com/jmacindoe/kobo-kernel-modules)
