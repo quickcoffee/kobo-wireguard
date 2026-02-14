@@ -15,3 +15,4 @@ Create these files on device storage:
 - `/mnt/onboard/wireguard/wg0.conf` (required)
 - `/mnt/onboard/wireguard/wg0.addresses` (optional)
 - `/mnt/onboard/wireguard/wg0.routes` (optional)
+- `/mnt/onboard/wireguard/wg0.dns` (optional, one DNS server IP per line)

@@ -8,7 +8,10 @@ WG_DIR="/mnt/onboard/wireguard"
 WG_CONF="${WG_DIR}/${WG_IFACE}.conf"
 WG_ADDRS="${WG_DIR}/${WG_IFACE}.addresses"
 WG_ROUTES="${WG_DIR}/${WG_IFACE}.routes"
+WG_DNS="${WG_DIR}/${WG_IFACE}.dns"
 WG_PID_FILE="/tmp/wireguard-go-${WG_IFACE}.pid"
+RESOLV_CONF="/etc/resolv.conf"
+RESOLV_BACKUP="/tmp/${WG_IFACE}.resolv.conf.bak"
 
 if [ ! -f "${WG_CONF}" ]; then
   echo "Skipping WireGuard start: ${WG_CONF} does not exist."
@@ -48,4 +51,15 @@ if [ -f "${WG_ROUTES}" ]; then
     esac
     ip route add "${route}" dev "${WG_IFACE}" 2>/dev/null || true
   done < "${WG_ROUTES}"
+fi
+
+if [ -f "${WG_DNS}" ]; then
+  cp "${RESOLV_CONF}" "${RESOLV_BACKUP}" 2>/dev/null || true
+  : > "${RESOLV_CONF}" 2>/dev/null || true
+  while IFS= read -r ns; do
+    case "${ns}" in
+      ''|'#'*) continue ;;
+    esac
+    echo "nameserver ${ns}" >> "${RESOLV_CONF}"
+  done < "${WG_DNS}"
 fi
