@@ -54,12 +54,19 @@ if [ -f "${WG_ROUTES}" ]; then
 fi
 
 if [ -f "${WG_DNS}" ]; then
-  cp "${RESOLV_CONF}" "${RESOLV_BACKUP}" 2>/dev/null || true
-  : > "${RESOLV_CONF}" 2>/dev/null || true
+  RESOLV_NEW="/tmp/${WG_IFACE}.resolv.conf.new"
+  dns_count=0
+  : > "${RESOLV_NEW}"
   while IFS= read -r ns; do
     case "${ns}" in
       ''|'#'*) continue ;;
     esac
-    echo "nameserver ${ns}" >> "${RESOLV_CONF}"
+    echo "nameserver ${ns}" >> "${RESOLV_NEW}"
+    dns_count=$((dns_count + 1))
   done < "${WG_DNS}"
+  if [ "${dns_count}" -gt 0 ]; then
+    cp "${RESOLV_CONF}" "${RESOLV_BACKUP}" 2>/dev/null || true
+    cp "${RESOLV_NEW}" "${RESOLV_CONF}" 2>/dev/null || true
+  fi
+  rm -f "${RESOLV_NEW}"
 fi
