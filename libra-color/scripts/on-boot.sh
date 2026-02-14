@@ -1,23 +1,22 @@
 #!/bin/sh
 
-# Make sure to load the TUN kernel module and create the /dev/net/tun device
+set -e
+export PATH=/usr/sbin:/usr/bin:/sbin:/bin:$PATH
+
+if [ ! -d /dev/pts ]; then
+  mkdir -p /dev/pts
+fi
+if ! grep -q ' /dev/pts ' /proc/mounts; then
+  mount -t devpts devpts /dev/pts || true
+fi
+
 if [ ! -c /dev/net/tun ]; then
   mkdir -p /dev/net
   mknod /dev/net/tun c 10 200
 fi
 
-# Make absolutely sure that iptables is in the PATH
-export PATH=/usr/sbin:/usr/bin:$PATH
-
-# Make sure /mnt/onboard is mounted
-timeout 5 sh -c "while ! grep -q /mnt/onboard /proc/mounts; do sleep 0.1; done"
-if [[ $? -eq 143 ]]; then
-    exit 1
+if timeout 5 sh -c "while ! grep -q ' /mnt/onboard ' /proc/mounts; do sleep 0.1; done"; then
+  /usr/local/wireguard/start.sh
 fi
-
-case "$(pidof tailscaled | wc -w)" in
-0) tailscaled --statedir=/mnt/onboard/tailscale &> /tailscaled.log &
-   ;;
-esac
 
 exit 0
