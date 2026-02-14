@@ -28,12 +28,14 @@ tools/build-armv7.sh
 5. (Optional) Add:
 - `/mnt/onboard/wireguard/wg0.addresses` (one CIDR per line)
 - `/mnt/onboard/wireguard/wg0.routes` (one route/CIDR per line)
+- `/mnt/onboard/wireguard/wg0.dns` (one DNS server IP per line)
 6. Start with `/usr/local/wireguard/start.sh` or reconnect Wi-Fi.
 
 ## Config notes
 `wg0.conf` is passed directly to `wg setconf`, so it must contain only WireGuard-native config sections and keys (no `Address=` or `DNS=` directives).
 
 Use `wg0.addresses` and `wg0.routes` for addresses/routes that would normally be handled by `wg-quick`.
+Use `wg0.dns` to temporarily set `/etc/resolv.conf` while WireGuard is running; the previous resolver config is restored on stop.
 
 ## Building ARMv7 binaries
 `tools/build-armv7.sh` uses Docker to cross-compile:
