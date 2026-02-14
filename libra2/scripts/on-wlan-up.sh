@@ -1,2 +1,3 @@
 #!/bin/sh
-tailscale up
+
+/usr/local/wireguard/start.sh

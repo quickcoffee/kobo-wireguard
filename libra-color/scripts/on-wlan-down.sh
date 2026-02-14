@@ -1,2 +1,3 @@
 #!/bin/sh
-tailscale down
+
+/usr/local/wireguard/stop.sh
