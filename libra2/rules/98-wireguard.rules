@@ -1,3 +1,1 @@
-KERNEL=="loop0", RUN+="/bin/sh -c '/usr/local/wireguard/boot.sh'"
-KERNEL=="wlan*", ACTION=="add", RUN+="/bin/sh -c '/usr/local/wireguard/on-wlan-up.sh'"
-KERNEL=="wlan*", ACTION=="remove", RUN+="/bin/sh -c '/usr/local/wireguard/on-wlan-down.sh'"
+SUBSYSTEM=="block", KERNEL=="loop0", ACTION=="add", RUN+="/usr/local/wireguard/boot.sh"
