@@ -9,33 +9,41 @@ Install scripts for getting WireGuard running on Kobo e-readers and persisting t
 If you have another device and would like to contribute, please open a PR.
 
 ## Important requirements
-This repo now uses the userspace stack (`wireguard-go` + `wg`) and expects ARMv7 binaries to be present in each device folder:
+The mod uses the userspace stack (`wireguard-go` and `wg`). Each device folder includes both ARMv7 binaries.
 
-- `binaries/wireguard/wireguard-go`
-- `binaries/wireguard/wg`
-
-Build them automatically with:
-
-```bash
-tools/build-armv7.sh
-```
+The device must provide a working TUN driver, the `ip` and `timeout` commands, and `flock` (a standalone command or a BusyBox applet). The Libra 2 installer includes a TUN module that must match its running kernel.
 
 ## Installation
-1. Download this repo onto your Kobo onboard storage and open your device directory.
-2. Add `wireguard-go` and `wg` binaries to `binaries/wireguard/` (or run `tools/build-armv7.sh` first).
-3. Run `install-wireguard.sh`.
-4. Create `/mnt/onboard/wireguard/wg0.conf`.
-5. (Optional) Add:
-- `/mnt/onboard/wireguard/wg0.addresses` (one CIDR per line)
-- `/mnt/onboard/wireguard/wg0.routes` (one route/CIDR per line)
-- `/mnt/onboard/wireguard/wg0.dns` (one DNS server IP per line)
-6. Start with `/usr/local/wireguard/start.sh` or reconnect Wi-Fi.
+1. Copy your device directory to the Kobo's onboard storage.
+2. Open that directory in a root shell and run `sh install-wireguard.sh`. If upgrading from the earlier scripts, first stop an active tunnel with the installed `/usr/local/wireguard/stop.sh`.
+3. Create `/mnt/onboard/wireguard/wg0.conf` with the client key and peer settings.
+4. Add `/mnt/onboard/wireguard/wg0.addresses` with the assigned tunnel address in CIDR notation, such as `10.8.0.2/32`.
+5. Add `/mnt/onboard/wireguard/wg0.routes` with the remote subnets to reach over the tunnel, such as `10.20.0.0/24`. A subnet already covered by the tunnel address does not require a separate route.
+6. Optionally create `/mnt/onboard/wireguard/wg0.dns` with one DNS server IP per line.
 
 ## Config notes
-`wg0.conf` is passed directly to `wg setconf`, so it must contain only WireGuard-native config sections and keys (no `Address=` or `DNS=` directives).
+`wg0.conf` is passed directly to `wg setconf`. Move `Address=` and `DNS=` values from a wg-quick profile into the corresponding sidecar files and remove any other wg-quick-only directives. Put one value per line in each sidecar. Blank lines and `#` comments are accepted.
 
-Use `wg0.addresses` and `wg0.routes` for addresses/routes that would normally be handled by `wg-quick`.
-Use `wg0.dns` to temporarily set `/etc/resolv.conf` while WireGuard is running; the previous resolver config is restored on stop.
+The mod sets up split-tunnel routing. Make sure each remote subnet is covered by the relevant peer's `AllowedIPs` and routed through `wg0.routes` or a connected tunnel subnet. Default routes such as `0.0.0.0/0` and `::/0` in `wg0.routes` are rejected to preserve the peer endpoint's network path.
+
+The DNS override is applied after address and route setup succeeds. On stop, the previous resolver settings are restored if the current settings still match the override.
+
+## Starting and stopping
+
+The monitor starts on installation and boot. It waits for an addressed uplink with a default route, retries failed starts, and reconfigures the tunnel when it detects a connection change. To attempt setup immediately, run `/usr/local/wireguard/start.sh`. Run `/usr/local/wireguard/stop.sh` to stop the tunnel until a detected reconnect, an explicit start, or a reboot.
+
+Automatic setup logs to `/tmp/kobo-wireguard/wg0.setup.log`. The daemon logs to `/wg0-wireguard-go.log`. After generating traffic to a remote IP, use `wg show wg0` to check for a handshake and `ip route get <remote-IP>` to check the selected route.
+
+### NickelMenu
+
+If NickelMenu is installed, add these lines to a file in `/mnt/onboard/.adds/nm/` to show tunnel status and toggle it from the main menu.
+
+```text
+menu_item :main :WireGuard Status :cmd_output :6000:/usr/local/wireguard/service.sh status
+menu_item :main :Toggle WireGuard :cmd_output :6000:/usr/local/wireguard/service.sh toggle
+```
+
+Turning WireGuard off from the menu persists across Wi-Fi reconnects and reboots. Use the toggle or `start.sh` to enable it again.
 
 ## Building ARMv7 binaries
 `tools/build-armv7.sh` uses Docker to cross-compile:
@@ -59,12 +67,7 @@ Default tool refs:
 
 ## Uninstallation
 Run `uninstall-wireguard.sh` from your device directory.
-
-## Improvements from upstream issue reports
-- Removed legacy VPN/iptables runtime dependency in startup scripts.
-- Fixed rule cleanup mismatch by consistently using `98-wireguard.rules`.
-- Added `/dev/pts` mount guard in boot path for more stable shell/SSH behavior.
-- Added explicit route/address files to reduce accidental full-tunnel breakage of Kobo connectivity.
+Remove the WireGuard NickelMenu entries if you added them.
 
 ## Acknowledgements
 - Based on [videah/kobo-tailscale](https://github.com/videah/kobo-tailscale).

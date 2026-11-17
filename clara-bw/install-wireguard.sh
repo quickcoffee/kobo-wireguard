@@ -1,11 +1,23 @@
 #!/bin/sh
 
 set -e
+export PATH=/usr/sbin:/usr/bin:/sbin:/bin:$PATH
 
 echo
 echo "Installing WireGuard for Kobo Clara BW!"
 uname -a
 echo
+
+for utility in ip setsid timeout; do
+  if ! command -v "$utility" >/dev/null 2>&1; then
+    echo "Missing required command: $utility" >&2
+    exit 1
+  fi
+done
+if ! command -v flock >/dev/null 2>&1 && ! busybox --list 2>/dev/null | grep -qx flock; then
+  echo "Missing flock (standalone command or BusyBox applet required)." >&2
+  exit 1
+fi
 
 echo "Validating required WireGuard binaries ..."
 if [ ! -x binaries/wireguard/wireguard-go ]; then
@@ -15,6 +27,13 @@ fi
 
 if [ ! -x binaries/wireguard/wg ]; then
   echo "Missing executable: binaries/wireguard/wg"
+  exit 1
+fi
+
+if [ -x /usr/local/wireguard/service.sh ]; then
+  /usr/local/wireguard/service.sh shutdown
+elif [ -x /usr/local/wireguard/stop.sh ] && ip link show dev wg0 >/dev/null 2>&1; then
+  echo "Stop the running WireGuard interface with /usr/local/wireguard/stop.sh before upgrading." >&2
   exit 1
 fi
 
@@ -35,16 +54,13 @@ chmod 0755 /usr/local/wireguard/*.sh
 echo "Installing WireGuard udev rule into /etc/udev/rules.d ..."
 cp rules/* /etc/udev/rules.d
 
+rm -f /usr/local/wireguard/on-wlan-up.sh /usr/local/wireguard/on-wlan-down.sh
+/usr/local/wireguard/service.sh enable
+/usr/local/wireguard/boot.sh
+
 echo
 if [ ! -f /mnt/onboard/wireguard/wg0.conf ]; then
-  echo "No /mnt/onboard/wireguard/wg0.conf found."
-  echo "Create wg0.conf and optional wg0.addresses/wg0.routes, then run /usr/local/wireguard/start.sh"
-else
-  echo "Attempting to start WireGuard ..."
-  /usr/local/wireguard/start.sh
+  echo "Create /mnt/onboard/wireguard/wg0.conf and its address and route files."
 fi
-echo
-
-echo "Installation complete!"
-echo "WireGuard binaries are located in /mnt/onboard/wireguard/bin."
-echo "Runtime scripts are located in /usr/local/wireguard."
+echo "Installation complete. WireGuard will start when the network is ready."
+echo "Automatic setup log is at /tmp/kobo-wireguard/wg0.setup.log."

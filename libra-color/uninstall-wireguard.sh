@@ -4,8 +4,10 @@ set -e
 
 echo "Uninstalling WireGuard ..."
 
-if [ -x /usr/local/wireguard/stop.sh ]; then
-  /usr/local/wireguard/stop.sh || true
+if [ -x /usr/local/wireguard/service.sh ]; then
+  /usr/local/wireguard/service.sh shutdown
+elif [ -x /usr/local/wireguard/stop.sh ]; then
+  /usr/local/wireguard/stop.sh
 fi
 
 echo "Removing WireGuard binaries from /mnt/onboard/wireguard/bin and /usr/bin ..."

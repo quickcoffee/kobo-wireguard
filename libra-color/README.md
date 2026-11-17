@@ -3,16 +3,8 @@
 ## Modules
 WireGuard requires the TUN/TAP device driver. This device family already exposes TUN, so no extra kernel module is installed.
 
-## WireGuard binaries
-Before running `install-wireguard.sh`, place ARMv7 binaries in `binaries/wireguard/`:
+## Installation and configuration
 
-- `wireguard-go`
-- `wg`
+Run `sh install-wireguard.sh` in the device directory as root. Under `/mnt/onboard/wireguard/`, add `wg0.conf` with the WireGuard peer settings, `wg0.addresses` with your tunnel address, and `wg0.routes` for any remote subnets beyond the connected tunnel subnet. Use `wg0.dns` to supply an optional DNS override.
 
-## Runtime files
-Create these files on device storage:
-
-- `/mnt/onboard/wireguard/wg0.conf` (required)
-- `/mnt/onboard/wireguard/wg0.addresses` (optional)
-- `/mnt/onboard/wireguard/wg0.routes` (optional)
-- `/mnt/onboard/wireguard/wg0.dns` (optional, one DNS server IP per line)
+See the [project README](../README.md) for requirements, split-tunnel routing, and troubleshooting.
